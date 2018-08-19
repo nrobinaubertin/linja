@@ -182,15 +182,31 @@ int value_move(int board[2][8], int color, int ttl) {
     int min = color ? 1 : 0;
     int max = color ? 8 : 7;
     int score = color ? 100 : -100;
+    int i, j, s;
     move m = init_move(color, 0, 0);
     move best_move = init_move(color, 0, 0);
-    for (int i = min; i < max; i++) {
-        for (int j = min; j < max; j++) {
+    if (color) {
+        if (board[1][0] > 0) {
+            set_move(best_move, 0, 0);
+            memcpy(new_board, board, sizeof(int) * 16);
+            make_move(new_board, best_move);
+            score = value_move(new_board, (color+1)%2, ttl);
+        }
+    } else {
+        if (board[0][6] > 0) {
+            set_move(best_move, 6, 0);
+            memcpy(new_board, board, sizeof(int) * 16);
+            make_move(new_board, best_move);
+            score = value_move(new_board, (color+1)%2, ttl);
+        }
+    }
+    for (i = 1; i < 7; i++) {
+        for (j = 1; j < 7; j++) {
             set_move(m, i, j);
             if (is_move_possible(board, m)) {
                 memcpy(new_board, board, sizeof(int) * 16);
                 make_move(new_board, m);
-                int s = value_move(new_board, (color+1)%2, ttl);
+                s = value_move(new_board, (color+1)%2, ttl);
                 // if we're black, we try to maximize the score
                 if (!color && s > score) {
                     score = s;
@@ -246,7 +262,7 @@ move interactive_move(int board[2][8]) {
 int main() {
 
     int board[2][8] = {
-        {0, 0, 1, 1, 2, 1, 6, 0},
+        {2, 0, 0, 1, 2, 1, 5, 0},
         {2, 3, 1, 1, 3, 1, 1, 0},
     };
     print_board(board);
