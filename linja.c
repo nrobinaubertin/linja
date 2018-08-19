@@ -4,7 +4,7 @@
 #include <math.h>
 #include <assert.h>
 
-#define LEVEL 5
+#define LEVEL 7
 
 /*
  * Black plays first
@@ -60,6 +60,21 @@ void print_board(int board[2][8]) {
 
 void print_move(move m) {
     printf("%d, %d\n", m->p1, m->p2);
+}
+
+int is_game_over(int board[2][8]) {
+    int black, red = 0;
+    for (black = 0; black < 8; black++) {
+        if (board[0][black] > 0)
+            break;
+    }
+    for (red = 7; red > -1; red--) {
+        if (board[1][red] > 0)
+            break;
+    }
+    if (black > red)
+        return 1;
+    return 0;
 }
 
 int phase1(int board[2][8], int color, int row) {
@@ -127,7 +142,7 @@ int get_score(int board[2][8]) {
     }
     score = score + 5 * board[0][7];
     for (i = 1; i < 4; i++) {
-        score = score + board[1][i] * (4 - i);
+        score = score - board[1][i] * (4 - i);
     }
     score = score - 5 * board[1][0];
     return score;
@@ -137,20 +152,31 @@ int get_score(int board[2][8]) {
 // this is not the score from the rules but for the AI
 int get_virtual_score(int board[2][8]) {
     int i, score = 0;
-    for (i = 0; i < 7; i++) {
+    for (i = 0; i < 4; i++) {
         score = score + board[0][i] * (i - 3);
     }
-    score = score + 5 * board[0][7];
-    for (i = 1; i < 8; i++) {
-        score = score + board[1][i] * (4 - i);
+    for (i = 4; i < 7; i++) {
+        score = score + 10 * board[0][i] * (i - 3);
     }
-    score = score - 5 * board[1][0];
+    score = score + 50 * board[0][7];
+    for (i = 1; i < 4; i++) {
+        score = score - 10 * board[1][i] * (4 - i);
+    }
+    for (i = 4; i < 8; i++) {
+        score = score - board[1][i] * (4 - i);
+    }
+    score = score - 50 * board[1][0];
     return score;
 }
 
 int value_move(int board[2][8], int color, int ttl) {
     if (--ttl < 1) {
         return get_virtual_score(board);
+    }
+    if (is_game_over(board)) {
+        if (get_score(board) > 0)
+            return 1000;
+        return -1000;
     }
     int new_board[2][8];
     int min = color ? 1 : 0;
@@ -206,22 +232,8 @@ move best_move_for_black(int board[2][8]) {
         }
     }
     free(m);
+    printf("best_score: %d\n", best_score);
     return best_move;
-}
-
-int is_game_over(int board[2][8]) {
-    int black, red = 0;
-    for (black = 0; black < 8; black++) {
-        if (board[0][black] > 0)
-            break;
-    }
-    for (red = 7; red > -1; red--) {
-        if (board[1][red] > 0)
-            break;
-    }
-    if (black > red)
-        return 1;
-    return 0;
 }
 
 move interactive_move(int board[2][8]) {
@@ -232,6 +244,21 @@ move interactive_move(int board[2][8]) {
 }
 
 int main() {
+
+    int board[2][8] = {
+        {0, 0, 1, 1, 2, 1, 6, 0},
+        {2, 3, 1, 1, 3, 1, 1, 0},
+    };
+    print_board(board);
+    move m = best_move_for_black(board);
+    assert(m);
+    make_move(board, m);
+    print_move(m);
+    print_board(board);
+    printf("score: %d\n", get_score(board));
+    return 0;
+
+    /*
     int board[2][8] = {
         {6, 1, 1, 1, 1, 1, 1, 0},
         {0, 1, 1, 1, 1, 1, 1, 6},
@@ -259,4 +286,6 @@ int main() {
     } else {
         printf("Red wins !\n");
     }
+    return 0;
+    */
 }
