@@ -179,8 +179,6 @@ int value_move(int board[2][8], int color, int ttl) {
         return -1000;
     }
     int new_board[2][8];
-    int min = color ? 1 : 0;
-    int max = color ? 8 : 7;
     int score = color ? 100 : -100;
     int i, j, s;
     move m = init_move(color, 0, 0);
@@ -190,34 +188,40 @@ int value_move(int board[2][8], int color, int ttl) {
             set_move(best_move, 0, 0);
             memcpy(new_board, board, sizeof(int) * 16);
             make_move(new_board, best_move);
-            score = value_move(new_board, (color+1)%2, ttl);
+            score = value_move(new_board, 0, ttl);
+        }
+        for (i = 1; i < 7; i++) {
+            for (j = 1; j < 7; j++) {
+                set_move(m, i, j);
+                if (is_move_possible(board, m)) {
+                    memcpy(new_board, board, sizeof(int) * 16);
+                    make_move(new_board, m);
+                    s = value_move(new_board, 0, ttl);
+                    if (s < score) {
+                        score = s;
+                        set_move(best_move, i, j);
+                    }
+                }
+            }
         }
     } else {
         if (board[0][6] > 0) {
             set_move(best_move, 6, 0);
             memcpy(new_board, board, sizeof(int) * 16);
             make_move(new_board, best_move);
-            score = value_move(new_board, (color+1)%2, ttl);
+            score = value_move(new_board, 1, ttl);
         }
-    }
-    for (i = 1; i < 7; i++) {
-        for (j = 1; j < 7; j++) {
-            set_move(m, i, j);
-            if (is_move_possible(board, m)) {
-                memcpy(new_board, board, sizeof(int) * 16);
-                make_move(new_board, m);
-                s = value_move(new_board, (color+1)%2, ttl);
-                // if we're black, we try to maximize the score
-                if (!color && s > score) {
-                    score = s;
-                    set_move(best_move, i, j);
-                    continue;
-                }
-                // if we're red, we try to minimize the score
-                if (color && s < score) {
-                    score = s;
-                    set_move(best_move, i, j);
-                    continue;
+        for (i = 1; i < 7; i++) {
+            for (j = 1; j < 7; j++) {
+                set_move(m, i, j);
+                if (is_move_possible(board, m)) {
+                    memcpy(new_board, board, sizeof(int) * 16);
+                    make_move(new_board, m);
+                    s = value_move(new_board, 1, ttl);
+                    if (s > score) {
+                        score = s;
+                        set_move(best_move, i, j);
+                    }
                 }
             }
         }
