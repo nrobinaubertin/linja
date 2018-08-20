@@ -102,13 +102,6 @@ void make_move(int board[2][8], move m) {
 int is_move_possible(int board[2][8], move m) {
     // check if there is less than 5 pieces at the arrival row
     int end1_row = m->color ? m->p1 - 1 : m->p1 + 1;
-    if (
-        (board[0][end1_row] + board[1][end1_row]) > 5
-        && end1_row < 7
-        && end1_row > 0
-    ) {
-        return 0;
-    }
     // check if there is a piece at the target row
     if (m->p2 == m->p1 && board[m->color][m->p2] < 2) {
         return 0;
@@ -180,6 +173,7 @@ int value_move(int board[2][8], int color, int ttl) {
     move m = init_move(color, 0, 0);
     move best_move = init_move(color, 0, 0);
     if (color) {
+        // color == 1 // RED
         if (board[1][0] > 0) {
             set_move(best_move, 0, 0);
             memcpy(new_board, board, sizeof(int) * 16);
@@ -189,6 +183,10 @@ int value_move(int board[2][8], int color, int ttl) {
         for (i = 1; i < 7; i++) {
             // check if there is a piece at the target row
             if (board[1][i] < 1) {
+                continue;
+            }
+            // check if there is less than 5 pieces at the arrival row
+            if (i - 1 > 0 && (board[0][i - 1] + board[1][i - 1]) > 5) {
                 continue;
             }
             for (j = 1; j < 7; j++) {
@@ -205,6 +203,7 @@ int value_move(int board[2][8], int color, int ttl) {
             }
         }
     } else {
+        // color == 0 // BLACK
         if (board[0][6] > 0) {
             set_move(best_move, 6, 0);
             memcpy(new_board, board, sizeof(int) * 16);
@@ -214,6 +213,10 @@ int value_move(int board[2][8], int color, int ttl) {
         for (i = 1; i < 7; i++) {
             // check if there is a piece at the target row
             if (board[0][i] < 1) {
+                continue;
+            }
+            // check if there is less than 5 pieces at the arrival row
+            if (i < 6 && (board[0][i + 1] + board[1][i + 1]) > 5) {
                 continue;
             }
             for (j = 1; j < 7; j++) {
@@ -244,6 +247,10 @@ move best_move_for_black(int board[2][8]) {
     for (int i = 0; i < 7; i++) {
         // check if there is a piece at the target row
         if (board[0][i] < 1) {
+            continue;
+        }
+        // check if there is less than 5 pieces at the arrival row
+        if (i < 6 && (board[0][i + 1] + board[1][i + 1]) > 5) {
             continue;
         }
         for (int j = 0; j < 7; j++) {
