@@ -4,7 +4,7 @@
 #include <math.h>
 #include <assert.h>
 
-#define LEVEL 7
+#define LEVEL 8
 
 /*
  * Black plays first
@@ -13,8 +13,9 @@
  */
 
 typedef struct move {
-    int color;
-    int p1;
+    int color; // 0 = black, 1 = red
+    int p1; // phase1 row
+    int end_p1; // end row of phase1 move
     int p2;
 } *move;
 
@@ -25,11 +26,6 @@ move init_move(int color, int p1, int p2) {
     m->p1 = p1;
     m->p2 = p2;
     return m;
-}
-
-void set_move(move m, int p1, int p2) {
-    m->p1 = p1;
-    m->p2 = p2;
 }
 
 int max(int a, int b) {
@@ -77,13 +73,12 @@ int is_game_over(int board[2][8]) {
     return 0;
 }
 
-int phase1(int board[2][8], int color, int row) {
+int phase1(int board[2][8], int color, int row, int end_row) {
     board[color][row]--;
-    row += color ? -1 : 1;
-    board[color][row]++;
-    if (row == 0 || row == 7)
+    board[color][end_row]++;
+    if (end_row == 0 || end_row == 7)
         return -1;
-    return board[color][row] - 1;
+    return board[color][end_row] - 1;
 }
 
 void phase2(int board[2][8], int color, int row, int n) {
@@ -93,26 +88,24 @@ void phase2(int board[2][8], int color, int row, int n) {
 }
 
 void make_move(int board[2][8], move m) {
-    int n = phase1(board, m->color, m->p1);
+    int n = phase1(board, m->color, m->p1, m->end_p1);
     if (n == -1)
         return;
     phase2(board, m->color, m->p2, n);
 }
 
 int is_move_possible(int board[2][8], move m) {
-    // check if there is less than 5 pieces at the arrival row
-    int end1_row = m->color ? m->p1 - 1 : m->p1 + 1;
     // check if there is a piece at the target row
     if (m->p2 == m->p1 && board[m->color][m->p2] < 2) {
         return 0;
     }
-    if (end1_row != m->p2 && board[m->color][m->p2] < 1) {
+    if (m->end_p1 != m->p2 && board[m->color][m->p2] < 1) {
         return 0;
     }
-    int n = board[0][end1_row] + board[1][end1_row];
+    int n = board[0][m->end_p1] + board[1][m->end_p1];
     int end2_row = m->color ? max(0, m->p2 - n) : min(7, m->p2 + n);
     // take previous movement into account
-    int max_pieces = end2_row == end1_row ? 4 : 5;
+    int max_pieces = end2_row == m->end_p1 ? 4 : 5;
     if (
         (board[0][end2_row] + board[1][end2_row]) > max_pieces
         && end2_row < 7
@@ -175,29 +168,34 @@ int value_move(int board[2][8], int color, int ttl) {
     if (color) {
         // color == 1 // RED
         if (board[1][0] > 0) {
-            set_move(best_move, 0, 0);
+            best_move->p1 = 1;
+            best_move->end_p1 = 0;
+            best_move->p2 = 0;
             memcpy(new_board, board, sizeof(int) * 16);
             make_move(new_board, best_move);
             score = value_move(new_board, 0, ttl);
         }
-        for (i = 1; i < 7; i++) {
+        for (i = 2; i < 8; i++) {
             // check if there is a piece at the target row
             if (board[1][i] < 1) {
                 continue;
             }
+
+            m->p1 = i;
+            m->end_p1 = i - 1;
             // check if there is less than 5 pieces at the arrival row
-            if (i - 1 > 0 && (board[0][i - 1] + board[1][i - 1]) > 5) {
+            if (board[0][m->end_p1] + board[1][m->end_p1] > 5) {
                 continue;
             }
             for (j = 1; j < 7; j++) {
-                set_move(m, i, j);
+                m->p2 = j;
                 if (is_move_possible(board, m)) {
                     memcpy(new_board, board, sizeof(int) * 16);
                     make_move(new_board, m);
                     s = value_move(new_board, 0, ttl);
                     if (s < score) {
                         score = s;
-                        set_move(best_move, i, j);
+                        memcpy(best_move, m, sizeof(struct move));
                     }
                 }
             }
@@ -205,29 +203,34 @@ int value_move(int board[2][8], int color, int ttl) {
     } else {
         // color == 0 // BLACK
         if (board[0][6] > 0) {
-            set_move(best_move, 6, 0);
+            best_move->p1 = 6;
+            best_move->end_p1 = 7;
+            best_move->p2 = 0;
             memcpy(new_board, board, sizeof(int) * 16);
             make_move(new_board, best_move);
             score = value_move(new_board, 1, ttl);
         }
-        for (i = 1; i < 7; i++) {
+        for (i = 0; i < 6; i++) {
             // check if there is a piece at the target row
             if (board[0][i] < 1) {
                 continue;
             }
+
+            m->p1 = i;
+            m->end_p1 = i + 1;
             // check if there is less than 5 pieces at the arrival row
-            if (i < 6 && (board[0][i + 1] + board[1][i + 1]) > 5) {
+            if (board[0][m->end_p1] + board[1][m->end_p1] > 5) {
                 continue;
             }
             for (j = 1; j < 7; j++) {
-                set_move(m, i, j);
+                m->p2 = j;
                 if (is_move_possible(board, m)) {
                     memcpy(new_board, board, sizeof(int) * 16);
                     make_move(new_board, m);
                     s = value_move(new_board, 1, ttl);
                     if (s > score) {
                         score = s;
-                        set_move(best_move, i, j);
+                        memcpy(best_move, m, sizeof(struct move));
                     }
                 }
             }
@@ -254,7 +257,9 @@ move best_move_for_black(int board[2][8]) {
             continue;
         }
         for (int j = 0; j < 7; j++) {
-            set_move(m, i, j);
+            m->p1 = i;
+            m->end_p1 = i + 1;
+            m->p2 = j;
             if (is_move_possible(board, m)) {
                 memcpy(new_board, board, sizeof(int) * 16);
                 make_move(new_board, m);
