@@ -4,7 +4,7 @@
 #include <math.h>
 #include <assert.h>
 
-#define LEVEL 8
+#define LEVEL 7
 
 /*
  * Black plays first
@@ -130,6 +130,7 @@ int get_score(int board[2][8]) {
     return score;
 }
 
+
 // calculates a score for black (color == 0). If its positive, then he wins
 // this is not the score from the rules but for the AI
 int get_virtual_score(int board[2][8]) {
@@ -160,9 +161,14 @@ int value_move(int board[2][8], int color, int ttl) {
             return 1000;
         return -1000;
     }
+    int i, j, s;
+    // if the score gets to extreme, stop the tree
+    if (ttl > 4 && (s = get_virtual_score(board)) < -50) {
+        printf("stop at %d\n", ttl);
+        return s;
+    }
     int new_board[2][8];
     int score = color ? 100 : -100;
-    int i, j, s;
     move m = init_move(color, 0, 0);
     move best_move = init_move(color, 0, 0);
     if (color) {
@@ -264,6 +270,7 @@ move best_move_for_black(int board[2][8]) {
                 memcpy(new_board, board, sizeof(int) * 16);
                 make_move(new_board, m);
                 score = value_move(new_board, 1, LEVEL);
+                printf("move %d %d: %d\n", i, j, score);
                 if (score > best_score) {
                     best_score = score;
                     memcpy(best_move, m, sizeof(struct move));
@@ -285,9 +292,13 @@ move interactive_move(int board[2][8]) {
 
 int main() {
 
+    // int board[2][8] = {
+    //     {2, 0, 0, 1, 2, 1, 5, 0},
+    //     {2, 3, 1, 1, 3, 1, 1, 0},
+    // };
     int board[2][8] = {
-        {2, 0, 0, 1, 2, 1, 5, 0},
-        {2, 3, 1, 1, 3, 1, 1, 0},
+        {6, 1, 1, 1, 1, 1, 1, 0},
+        {0, 1, 1, 1, 1, 1, 1, 6},
     };
     print_board(board);
     move m = best_move_for_black(board);
