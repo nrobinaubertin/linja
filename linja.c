@@ -7,9 +7,11 @@
 #define LEVEL 7
 
 /*
- * Black plays first
+ * black plays first
  * the board is represented as the position of all the pawns of each color
- * the first array are the black pawns
+ * the first row of a board are the black pawns
+ * a board is an int[2][8] or int**
+ * a board_list is a board[64] or int***
  */
 
 int** create_board() {
@@ -35,6 +37,58 @@ int** copy_board(int** new_board, int** board) {
     memcpy(new_board[0], board[0], sizeof(int) * 8);
     memcpy(new_board[1], board[1], sizeof(int) * 8);
     return new_board;
+}
+
+int boardcmp(int** b1, int** b2) {
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 8; j++) {
+            if (b1[i][j] != b2[i][j])
+                return 0;
+        }
+    }
+    return 1;
+}
+
+void print_board(int** board) {
+    int i, j;
+    printf("----------------\n");
+    for(i = 0; i < 2; i++) {
+        for(j = 0; j < 8; j++) {
+            printf("%d ", board[i][j]);
+        }
+        printf("\n");
+    }
+    printf("----------------\n");
+}
+
+void print_board_list(int*** board_list) {
+    printf("\n\n______\n\n");
+    for(int i = 0; i < 64; i++) {
+        if (board_list[i] == NULL) {
+            printf("NULL,");
+        } else {
+            print_board(board_list[i]);
+        }
+    }
+    printf("\n\n______\n\n");
+}
+
+int is_in_board_list(int*** board_list, int** b) {
+    for(int i = 0; i < 64; i++) {
+        if (board_list[i] == NULL)
+            return 0;
+        if (boardcmp(board_list[i], b))
+            return 1;
+    }
+    return 0;
+}
+
+void add_to_board_list(int*** board_list, int** b) {
+    int i = 0;
+    while(board_list[i] != NULL) {
+        i++;
+    }
+    board_list[i] = b;
 }
 
 typedef struct move {
@@ -65,18 +119,6 @@ int min(int a, int b) {
         return a;
     }
     return b;
-}
-
-void print_board(int** board) {
-    int i, j;
-    printf("----------------\n");
-    for(i = 0; i < 2; i++) {
-        for(j = 0; j < 8; j++) {
-            printf("%d ", board[i][j]);
-        }
-        printf("\n");
-    }
-    printf("----------------\n");
 }
 
 void print_move(move m) {
@@ -206,6 +248,7 @@ int value_move(int** board, int color, int ttl) {
     int score = color ? 100 : -100;
     move m = init_move(color, 0, 0);
     move best_move = init_move(color, 0, 0);
+    int** board_list[64] = {NULL};
     if (color) {
         // color == 1 // RED
         if (board[1][0] > 0) {
@@ -233,13 +276,17 @@ int value_move(int** board, int color, int ttl) {
                 m->p2 = j;
                 int** new_board = is_move_possible(board, m);
                 if (new_board != NULL) {
-                    s = value_move(new_board, 0, ttl);
-                    if (s < score) {
-                        score = s;
-                        memcpy(best_move, m, sizeof(struct move));
+                    if (!is_in_board_list(board_list, new_board)) {
+                        s = value_move(new_board, 0, ttl);
+                        add_to_board_list(board_list, new_board);
+                        if (s < score) {
+                            score = s;
+                            memcpy(best_move, m, sizeof(struct move));
+                        }
+                    } else {
+                        destroy_board(new_board);
                     }
                 }
-                destroy_board(new_board);
             }
         }
     } else {
@@ -269,15 +316,23 @@ int value_move(int** board, int color, int ttl) {
                 m->p2 = j;
                 int** new_board = is_move_possible(board, m);
                 if (new_board != NULL) {
-                    s = value_move(new_board, 1, ttl);
-                    if (s > score) {
-                        score = s;
-                        memcpy(best_move, m, sizeof(struct move));
+                    if (!is_in_board_list(board_list, new_board)) {
+                        s = value_move(new_board, 1, ttl);
+                        add_to_board_list(board_list, new_board);
+                        if (s > score) {
+                            score = s;
+                            memcpy(best_move, m, sizeof(struct move));
+                        }
+                    } else {
+                        destroy_board(new_board);
                     }
                 }
-                destroy_board(new_board);
             }
         }
+    }
+    for(int i = 0; i < 64; i++) {
+        if (board_list[i])
+            destroy_board(board_list[i]);
     }
     if (m)
         free(m);
@@ -291,6 +346,7 @@ move best_move_for_black(int** board) {
     move best_move = init_move(0, 0, 0);
     move m = init_move(0, 0, 0);
     int score = 0;
+    int** board_list[64] = {NULL};
     for (int i = 0; i < 7; i++) {
         // check if there is a piece at the target row
         if (board[0][i] < 1) {
@@ -306,15 +362,23 @@ move best_move_for_black(int** board) {
             m->p2 = j;
             int** new_board = is_move_possible(board, m);
             if (new_board != NULL) {
-                score = value_move(new_board, 1, LEVEL);
-                printf("move %d %d: %d\n", i, j, score);
-                if (score > best_score) {
-                    best_score = score;
-                    memcpy(best_move, m, sizeof(struct move));
+                if (!is_in_board_list(board_list, new_board)) {
+                    score = value_move(new_board, 1, LEVEL);
+                    add_to_board_list(board_list, new_board);
+                    printf("move %d %d: %d\n", i, j, score);
+                    if (score > best_score) {
+                        best_score = score;
+                        memcpy(best_move, m, sizeof(struct move));
+                    }
+                } else {
+                    destroy_board(new_board);
                 }
             }
-            destroy_board(new_board);
         }
+    }
+    for(int i = 0; i < 64; i++) {
+        if (board_list[i])
+            destroy_board(board_list[i]);
     }
     if (m)
         free(m);
