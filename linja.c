@@ -437,7 +437,13 @@ move interactive_move(int** board) {
     return init_move(1, p1, p2);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    int level = 5;
+    if (argc == 2) {
+        level = atoi(argv[1]);
+    }
+    printf("level: %d\n", level);
 
     // int start[2][8] = {
     //     {2, 0, 0, 1, 2, 1, 5, 0},
@@ -463,7 +469,7 @@ int main() {
     board[1][7] = 6;
 
     print_board(board);
-    move m = best_move_for_black(board, 5);
+    move m = best_move_for_black(board, level);
     assert(m);
     make_move(board, m);
     print_move(m);
