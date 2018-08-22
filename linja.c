@@ -4,6 +4,9 @@
 #include <math.h>
 #include <assert.h>
 
+#include "board.h"
+#include "move.h"
+
 /*
  * black plays first
  * the board is represented as the position of all the pawns of each color
@@ -24,137 +27,6 @@ int min(int a, int b) {
         return a;
     }
     return b;
-}
-
-int** create_board() {
-    int** board = malloc(sizeof(int*) * 2);
-    for (int i = 0; i < 2; i++) {
-        board[i] = (int*) malloc(sizeof(int) * 8);
-    }
-    assert(board[0] && board[1]);
-    return board;
-}
-
-void destroy_board(int** board) {
-    if (board) {
-        for (int i = 0; i < 2; i++) {
-            if (board[i])
-                free(board[i]);
-        }
-        free(board);
-    }
-}
-
-void copy_board(int** new_board, int** board) {
-    memcpy(new_board[0], board[0], sizeof(int) * 8);
-    memcpy(new_board[1], board[1], sizeof(int) * 8);
-}
-
-int boardcmp(int** b1, int** b2) {
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 8; j++) {
-            if (b1[i][j] != b2[i][j])
-                return 0;
-        }
-    }
-    return 1;
-}
-
-void print_board(int** board) {
-    int i, j;
-    printf("----------------\n");
-    for(i = 0; i < 2; i++) {
-        for(j = 0; j < 8; j++) {
-            printf("%d ", board[i][j]);
-        }
-        printf("\n");
-    }
-    printf("----------------\n");
-}
-
-void print_board_list(int*** board_list) {
-    printf("\n\n______\n\n");
-    for(int i = 0; i < 64; i++) {
-        if (board_list[i] == NULL) {
-            printf("NULL,");
-        } else {
-            print_board(board_list[i]);
-        }
-    }
-    printf("\n\n______\n\n");
-}
-
-int is_in_board_list(int*** board_list, int** b) {
-    for(int i = 0; i < 64; i++) {
-        if (board_list[i] == NULL)
-            return 0;
-        if (boardcmp(board_list[i], b))
-            return 1;
-    }
-    return 0;
-}
-
-void add_to_board_list(int*** board_list, int** b) {
-    int i = 0;
-    while(board_list[i] != NULL) {
-        i++;
-    }
-    board_list[i] = b;
-}
-
-typedef struct move {
-    int color; // 0 = black, 1 = red
-    int p1; // phase1 row
-    int end_p1; // end row of phase1 move
-    int p2;
-    int score;
-} *move;
-
-move init_move(int color, int p1, int p2) {
-    move m = malloc(sizeof(struct move));
-    assert(m);
-    m->color = color;
-    m->p1 = p1;
-    m->p2 = p2;
-    return m;
-}
-
-void add_to_move_list(move* move_list, move m) {
-    int i = 0;
-    while(move_list[i] != NULL) {
-        i++;
-    }
-    move_list[i] = m;
-}
-
-int move_score_cmp(const void* m1, const void* m2) {
-    const move mm1 = *(const move*) m1;
-    const move mm2 = *(const move*) m2;
-    if (mm1 == NULL)
-        return 1;
-    if (mm2 == NULL)
-        return -1;
-    if (mm1->score > mm2->score)
-        return -1;
-    if (mm1->score < mm2->score)
-        return 1;
-    return 0;
-}
-
-void print_move(move m) {
-    printf("%d, %d: %d\n", m->p1, m->p2, m->score);
-}
-
-void print_move_list(move* move_list) {
-    printf("\n\n______\n\n");
-    for(int i = 0; i < 64; i++) {
-        if (move_list[i] == NULL) {
-            printf("NULL,");
-        } else {
-            print_move(move_list[i]);
-        }
-    }
-    printf("\n\n______\n\n");
 }
 
 int is_game_over(int** board) {
