@@ -125,18 +125,37 @@ int get_virtual_score(int** board) {
     return score;
 }
 
-int value_move(int** board, int color, int ttl) {
+void free_node_mem(int*** board_list, move m, move best_move, move* move_list) {
+    if (board_list) {
+        for(int i = 0; i < 64; i++) {
+            if (board_list[i])
+                destroy_board(board_list[i]);
+        }
+    }
+    if (m)
+        free(m);
+    if (best_move)
+        free(best_move);
+    if (move_list) {
+        for(int i = 0; i < 64; i++) {
+            if (move_list[i])
+                free(move_list[i]);
+        }
+    }
+}
+
+int value_move(int** board, int color, int ttl, int alpha, int beta) {
     assert(board[0] && board[1]);
     if (--ttl < 1) {
         return get_virtual_score(board);
     }
     if (is_game_over(board)) {
         if (get_score(board) > 0)
-            return 10000;
-        return -10000;
+            return 1000;
+        return -1000;
     }
     int i, j, s;
-    int score = color ? 1000 : -1000;
+    int score = color ? 10000 : -10000;
     move m = malloc(sizeof(struct move));
     move best_move = malloc(sizeof(struct move));
     assert(m);
@@ -144,55 +163,20 @@ int value_move(int** board, int color, int ttl) {
     m->color = color;
     best_move->color = color;
     int** board_list[64] = {NULL};
-    if (color) {
-        // color == 1 // RED
-        if (board[1][0] > 0) {
-            best_move->p1 = 1;
-            best_move->end_p1 = 0;
-            best_move->p2 = 0;
-            int** new_board = is_move_possible(board, best_move);
-            if (new_board != NULL)
-                score = value_move(new_board, 0, ttl);
-            destroy_board(new_board);
-        }
-        for (i = 2; i < 8; i++) {
-            // check if there is a piece at the target row
-            if (board[1][i] < 1) {
-                continue;
-            }
-
-            m->p1 = i;
-            m->end_p1 = i - 1;
-            // check if there is less than 5 pieces at the arrival row
-            if (board[0][m->end_p1] + board[1][m->end_p1] > 5) {
-                continue;
-            }
-            for (j = 1; j < 7; j++) {
-                m->p2 = j;
-                int** new_board = is_move_possible(board, m);
-                if (new_board != NULL) {
-                    if (!is_in_board_list(board_list, new_board)) {
-                        s = value_move(new_board, 0, ttl);
-                        add_to_board_list(board_list, new_board);
-                        if (s < score) {
-                            score = s;
-                            memcpy(best_move, m, sizeof(struct move));
-                        }
-                    } else {
-                        destroy_board(new_board);
-                    }
-                }
-            }
-        }
-    } else {
-        // color == 0 // BLACK
+    if (color == 0) {
         if (board[0][6] > 0) {
             best_move->p1 = 6;
             best_move->end_p1 = 7;
             best_move->p2 = 0;
             int** new_board = is_move_possible(board, best_move);
-            if (new_board != NULL)
-                score = value_move(new_board, 1, ttl);
+            if (new_board != NULL) {
+                score = value_move(new_board, 1, ttl, alpha, beta);
+                alpha = max(alpha, score);
+                if (alpha >= beta) {
+                    free_node_mem(board_list, m, best_move, NULL);
+                    return score;
+                }
+            }
             destroy_board(new_board);
         }
         for (i = 0; i < 6; i++) {
@@ -212,10 +196,65 @@ int value_move(int** board, int color, int ttl) {
                 int** new_board = is_move_possible(board, m);
                 if (new_board != NULL) {
                     if (!is_in_board_list(board_list, new_board)) {
-                        s = value_move(new_board, 1, ttl);
+                        s = value_move(new_board, 1, ttl, alpha, beta);
                         add_to_board_list(board_list, new_board);
                         if (s > score) {
                             score = s;
+                            alpha = max(alpha, score);
+                            if (alpha >= beta) {
+                                free_node_mem(board_list, m, best_move, NULL);
+                                return score;
+                            }
+                            memcpy(best_move, m, sizeof(struct move));
+                        }
+                    } else {
+                        destroy_board(new_board);
+                    }
+                }
+            }
+        }
+    } else {
+        if (board[1][0] > 0) {
+            best_move->p1 = 1;
+            best_move->end_p1 = 0;
+            best_move->p2 = 0;
+            int** new_board = is_move_possible(board, best_move);
+            if (new_board != NULL) {
+                score = value_move(new_board, 0, ttl, alpha, beta);
+                beta = min(beta, score);
+                if (alpha >= beta) {
+                    free_node_mem(board_list, m, best_move, NULL);
+                    return score;
+                }
+            }
+            destroy_board(new_board);
+        }
+        for (i = 2; i < 8; i++) {
+            // check if there is a piece at the target row
+            if (board[1][i] < 1) {
+                continue;
+            }
+
+            m->p1 = i;
+            m->end_p1 = i - 1;
+            // check if there is less than 5 pieces at the arrival row
+            if (board[0][m->end_p1] + board[1][m->end_p1] > 5) {
+                continue;
+            }
+            for (j = 1; j < 7; j++) {
+                m->p2 = j;
+                int** new_board = is_move_possible(board, m);
+                if (new_board != NULL) {
+                    if (!is_in_board_list(board_list, new_board)) {
+                        s = value_move(new_board, 0, ttl, alpha, beta);
+                        add_to_board_list(board_list, new_board);
+                        if (s < score) {
+                            score = s;
+                            beta = min(beta, score);
+                            if (alpha >= beta) {
+                                free_node_mem(board_list, m, best_move, NULL);
+                                return score;
+                            }
                             memcpy(best_move, m, sizeof(struct move));
                         }
                     } else {
@@ -225,14 +264,7 @@ int value_move(int** board, int color, int ttl) {
             }
         }
     }
-    for(int i = 0; i < 64; i++) {
-        if (board_list[i])
-            destroy_board(board_list[i]);
-    }
-    if (m)
-        free(m);
-    if (best_move)
-        free(best_move);
+    free_node_mem(board_list, m, best_move, NULL);
     return score;
 }
 
@@ -261,7 +293,7 @@ move best_move_for_black(int** board, int level) {
             int** new_board = is_move_possible(board, m);
             if (new_board != NULL) {
                 if (!is_in_board_list(board_list, new_board)) {
-                    score = value_move(new_board, 1, level);
+                    score = value_move(new_board, 1, level, -10000, 10000);
                     m->score = score;
                     add_to_board_list(board_list, new_board);
                     move mm = malloc(sizeof(struct move));
@@ -281,21 +313,11 @@ move best_move_for_black(int** board, int level) {
     // print out best moves
     qsort(move_list, 64, sizeof(move), move_score_cmp);
     printf("best moves:\n");
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < 8; i++) {
         if (move_list[i])
             print_move(move_list[i]);
     }
-
-    for(int i = 0; i < 64; i++) {
-        if (board_list[i])
-            destroy_board(board_list[i]);
-    }
-    for(int i = 0; i < 64; i++) {
-        if (move_list[i])
-            free(move_list[i]);
-    }
-    if (m)
-        free(m);
+    free_node_mem(board_list, m, NULL, move_list);
     printf("best_score: %d\n", best_score);
     return best_move;
 }
@@ -343,8 +365,8 @@ int main(int argc, char* argv[]) {
     print_board(board);
     move m = best_move_for_black(board, level);
     assert(m);
-    make_move(board, m);
     print_move(m);
+    make_move(board, m);
     print_board(board);
     printf("score: %d\n", get_score(board));
     return 0;
