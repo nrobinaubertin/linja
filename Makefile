@@ -1,5 +1,7 @@
 CC=gcc
-CFLAGS=-O3 -Wall -Wno-unused-result -std=c11 -pedantic
+CFLAGS=-DNDEBUG -O3 -Wall -Wno-unused-result -std=c11 -pedantic
+# debug flags
+CDFLAGS=-ggdb -Wall -Wno-unused-result -std=c11 -pedantic
 LDFLAGS=
 
 all: linja

@@ -3,15 +3,6 @@
 #include <assert.h>
 #include "move.h"
 
-move init_move(int color, int p1, int p2) {
-    move m = malloc(sizeof(struct move));
-    assert(m);
-    m->color = color;
-    m->p1 = p1;
-    m->p2 = p2;
-    return m;
-}
-
 void add_to_move_list(move* move_list, move m) {
     int i = 0;
     while(move_list[i] != NULL) {

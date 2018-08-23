@@ -115,21 +115,13 @@ int get_score(int** board) {
 // this is not the score from the rules but for the AI
 int get_virtual_score(int** board) {
     assert(board[0] && board[1]);
-    int i, score = 0;
-    for (i = 0; i < 4; i++) {
+    int score = get_score(board) * 10;
+    for (int i = 0; i < 4; i++) {
         score = score + board[0][i] * (i - 3);
     }
-    for (i = 4; i < 7; i++) {
-        score = score + 10 * board[0][i] * (i - 3);
-    }
-    score = score + 50 * board[0][7];
-    for (i = 1; i < 4; i++) {
-        score = score - 10 * board[1][i] * (4 - i);
-    }
-    for (i = 4; i < 8; i++) {
+    for (int i = 4; i < 8; i++) {
         score = score - board[1][i] * (4 - i);
     }
-    score = score - 50 * board[1][0];
     return score;
 }
 
@@ -140,13 +132,17 @@ int value_move(int** board, int color, int ttl) {
     }
     if (is_game_over(board)) {
         if (get_score(board) > 0)
-            return 1000;
-        return -1000;
+            return 10000;
+        return -10000;
     }
     int i, j, s;
-    int score = color ? 100 : -100;
-    move m = init_move(color, 0, 0);
-    move best_move = init_move(color, 0, 0);
+    int score = color ? 1000 : -1000;
+    move m = malloc(sizeof(struct move));
+    move best_move = malloc(sizeof(struct move));
+    assert(m);
+    assert(best_move);
+    m->color = color;
+    best_move->color = color;
     int** board_list[64] = {NULL};
     if (color) {
         // color == 1 // RED
@@ -244,6 +240,8 @@ move best_move_for_black(int** board, int level) {
     int best_score = -100;
     move best_move = malloc(sizeof(struct move));
     move m = malloc(sizeof(struct move));
+    m->color = 0;
+    best_move->color = 0;
     int score = 0;
     int** board_list[64] = {NULL};
     move move_list[64] = {NULL};
@@ -304,9 +302,11 @@ move best_move_for_black(int** board, int level) {
 
 move interactive_move(int** board) {
     printf("Input move: ");
-    int p1, p2;
-    scanf("%d %d", &p1, &p2);
-    return init_move(1, p1, p2);
+    move m = malloc(sizeof(struct move));
+    assert(m);
+    m->color = 1;
+    scanf("%d %d", &(m->p1), &(m->p2));
+    return m;
 }
 
 int main(int argc, char* argv[]) {
@@ -350,11 +350,6 @@ int main(int argc, char* argv[]) {
     return 0;
 
     /*
-    int board[2][8] = {
-        {6, 1, 1, 1, 1, 1, 1, 0},
-        {0, 1, 1, 1, 1, 1, 1, 6},
-    };
-
     print_board(board);
     move m;
 
