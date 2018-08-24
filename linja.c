@@ -84,12 +84,16 @@ int** is_move_possible(int** board, move m) {
     copy_board(new_board, board);
     make_move(new_board, m);
 
-    for(int i = 0; i < 2; i++) {
-        for(int j = 1; j < 7; j++) {
-            if (new_board[i][j] < 0 || new_board[i][j] > 5) {
-                destroy_board(new_board);
-                return NULL;
-            }
+    for(int j = 0; j < 8; j++) {
+        if (new_board[m->color][j] < 0) {
+            destroy_board(new_board);
+            return NULL;
+        }
+    }
+    for(int i = 1; i < 7; i++) {
+        if (new_board[0][i] + new_board[1][i] > 6) {
+            destroy_board(new_board);
+            return NULL;
         }
     }
     return new_board;
@@ -168,6 +172,7 @@ int value_move(int** board, int color, int ttl, int alpha, int beta) {
             best_move->p1 = 6;
             best_move->end_p1 = 7;
             best_move->p2 = 0;
+            assert(best_move->p1 > -1 && best_move->p1 < 8);
             int** new_board = is_move_possible(board, best_move);
             if (new_board != NULL) {
                 score = value_move(new_board, 1, ttl, alpha, beta);
@@ -193,6 +198,7 @@ int value_move(int** board, int color, int ttl, int alpha, int beta) {
             }
             for (j = 1; j < 7; j++) {
                 m->p2 = j;
+                assert(m->p1 > -1 && m->p1 < 8);
                 int** new_board = is_move_possible(board, m);
                 if (new_board != NULL) {
                     if (!is_in_board_list(board_list, new_board)) {
@@ -243,6 +249,7 @@ int value_move(int** board, int color, int ttl, int alpha, int beta) {
             }
             for (j = 1; j < 7; j++) {
                 m->p2 = j;
+                assert(m->p1 > -1 && m->p1 < 8);
                 int** new_board = is_move_possible(board, m);
                 if (new_board != NULL) {
                     if (!is_in_board_list(board_list, new_board)) {
@@ -311,14 +318,14 @@ move best_move_for_black(int** board, int level) {
     }
 
     // print out best moves
-    qsort(move_list, 64, sizeof(move), move_score_cmp);
-    printf("best moves:\n");
-    for(int i = 0; i < 8; i++) {
-        if (move_list[i])
-            print_move(move_list[i]);
-    }
+    // qsort(move_list, 64, sizeof(move), move_score_cmp);
+    // printf("best moves:\n");
+    // for(int i = 0; i < 8; i++) {
+    //     if (move_list[i])
+    //         print_move(move_list[i]);
+    // }
     free_node_mem(board_list, m, NULL, move_list);
-    printf("best_score: %d\n", best_score);
+    // printf("best_score: %d\n", best_score);
     return best_move;
 }
 
@@ -328,21 +335,18 @@ move interactive_move(int** board) {
     assert(m);
     m->color = 1;
     scanf("%d %d", &(m->p1), &(m->p2));
+    m->end_p1 = m->p1 - 1;
     return m;
 }
 
 int main(int argc, char* argv[]) {
 
-    int level = 5;
+    int level = 7;
     if (argc == 2) {
         level = atoi(argv[1]);
     }
     printf("level: %d\n", level);
 
-    // int start[2][8] = {
-    //     {2, 0, 0, 1, 2, 1, 5, 0},
-    //     {2, 3, 1, 1, 3, 1, 1, 0},
-    // };
     int** board = create_board();
     board[0][0] = 6;
     board[0][1] = 1;
@@ -362,32 +366,35 @@ int main(int argc, char* argv[]) {
     board[1][6] = 1;
     board[1][7] = 6;
 
-    print_board(board);
-    move m = best_move_for_black(board, level);
-    assert(m);
-    print_move(m);
-    make_move(board, m);
-    print_board(board);
-    printf("score: %d\n", get_score(board));
-    return 0;
+    // randomly choose a fairly good opening move
+    move move_list[5] = {NULL};
+    move_list[0] = init_move(0, 1, 0, 0, 30);
+    move_list[1] = init_move(0, 1, 3, 0, 30);
+    move_list[2] = init_move(0, 1, 6, 0, 29);
+    move_list[3] = init_move(0, 1, 2, 0, 24);
+    move_list[4] = init_move(0, 1, 4, 0, 24);
+    move m = move_list[rand()%5];
 
-    /*
     print_board(board);
-    move m;
+    make_move(board, m);
+    print_move(m);
+    print_board(board);
+    free(m);
 
     while(!is_game_over(board)) {
-        m = best_move_for_black(board);
-        assert(m);
-        make_move(board, m);
-        print_move(m);
-        print_board(board);
-        if (is_game_over(board))
-            break;
         m = interactive_move(board);
         assert(m);
         make_move(board, m);
-        print_move(m);
         print_board(board);
+        free(m);
+        if (is_game_over(board))
+            break;
+        m = best_move_for_black(board, level);
+        assert(m);
+        print_move(m);
+        make_move(board, m);
+        print_board(board);
+        free(m);
     }
     if (get_score(board) > 0) {
         printf("Black wins !\n");
@@ -395,5 +402,4 @@ int main(int argc, char* argv[]) {
         printf("Red wins !\n");
     }
     return 0;
-    */
 }

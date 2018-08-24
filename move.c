@@ -3,6 +3,16 @@
 #include <assert.h>
 #include "move.h"
 
+move init_move(int p1, int end_p1, int p2, int color, int score) {
+    move m = malloc(sizeof(struct move));
+    m->p1 = p1;
+    m->end_p1 = end_p1;
+    m->p2 = p2;
+    m->color = color;
+    m->score = score;
+    return m;
+}
+
 void add_to_move_list(move* move_list, move m) {
     int i = 0;
     while(move_list[i] != NULL) {

@@ -12,7 +12,7 @@ linja: linja.o move.o board.o
 .PHONY: clean
 
 clean:
-	rm -rf *.o
+	rm -rf *.o && rm linja
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
