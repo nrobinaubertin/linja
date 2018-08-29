@@ -54,7 +54,7 @@ int phase1(int** board, int color, int row, int end_row) {
     board[color][end_row]++;
     if (end_row == 0 || end_row == 7)
         return -1;
-    return board[color][end_row] - 1;
+    return board[0][end_row] + board[1][end_row] - 1;
 }
 
 void phase2(int** board, int color, int row, int n) {

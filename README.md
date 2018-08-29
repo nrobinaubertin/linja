@@ -3,7 +3,7 @@
 
 ![linja](linja.jpg)
 
-This is a simple minimax AI for the game of [linja](https://boardgamegeek.com/boardgame/15209/linja).
+This is a simple alpha/beta AI for the game of [linja](https://boardgamegeek.com/boardgame/15209/linja).
 It assumes that black goes first and plays black.
 
 __Description of the game:__
