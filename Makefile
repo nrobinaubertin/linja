@@ -1,4 +1,5 @@
-CC=gcc
+#CC=gcc
+CC=clang
 CFLAGS=-DNDEBUG -O3 -Wall -Wno-unused-result -std=c11 -pedantic
 # debug flags
 CDFLAGS=-ggdb -Wall -Wno-unused-result -std=c11 -pedantic

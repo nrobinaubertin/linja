@@ -366,13 +366,13 @@ int main(int argc, char* argv[]) {
     board[1][6] = 1;
     board[1][7] = 6;
 
-    // randomly choose a fairly good opening move
+    // randomly choose a fairly good opening move (depth 9)
     move move_list[5] = {NULL};
-    move_list[0] = init_move(0, 1, 0, 0, 30);
-    move_list[1] = init_move(0, 1, 3, 0, 30);
-    move_list[2] = init_move(0, 1, 6, 0, 29);
-    move_list[3] = init_move(0, 1, 2, 0, 24);
-    move_list[4] = init_move(0, 1, 4, 0, 24);
+    move_list[0] = init_move(0, 1, 2, 0, 29);
+    move_list[1] = init_move(2, 3, 3, 0, 29);
+    move_list[2] = init_move(4, 5, 5, 0, 28);
+    move_list[3] = init_move(0, 1, 5, 0, 24);
+    move_list[4] = init_move(1, 2, 2, 0, 24);
     move m = move_list[rand()%5];
 
     print_board(board);
